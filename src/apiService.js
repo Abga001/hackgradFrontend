@@ -2,7 +2,8 @@
 
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+// Use environment variable from GitHub secrets, fallback to production URL
+const API_URL = process.env.REACT_APP_API_URL || 'https://hackgrad.azurewebsites.net/api';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -19,6 +20,7 @@ const apiAxios = axios.create({
   baseURL: API_URL,
   timeout: 10000,
 });
+
 
 
 // Helper function for caching
@@ -97,6 +99,8 @@ api.interceptors.request.use(
 
 // Auth Service
 export const authService = {
+
+    getApiUrl: () => API_URL,
   // Register new user
   register: async (userData) => {
     try {

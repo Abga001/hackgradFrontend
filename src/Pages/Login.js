@@ -74,11 +74,13 @@ const Login = () => {
     setRegisterData({ ...registerData, [name]: value });
   };
 
-  // Handle login submission
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+const handleLoginSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setIsLoading(true);
+  
+  // Add debugging to show which API URL is being used
+  console.log("Attempting login with API URL:", authService.getApiUrl());
     
     try {
       const response = await authService.login(loginData);

@@ -1,6 +1,0 @@
-# hackgradFrontend/dispatch.yaml
-dispatch:
-  - url: "*/api/*"
-    service: backend
-  - url: "*/*"
-    service: frontend
