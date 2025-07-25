@@ -3,7 +3,8 @@
 import axios from 'axios';
 
 // Use environment variable from GitHub secrets, fallback to production URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api';
+// const API_URL = process.env.REACT_APP_API_URL || 'https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api';
+const API_URL = 'https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
