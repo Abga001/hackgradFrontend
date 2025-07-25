@@ -3,8 +3,7 @@ const config = {
     apiUrl: 'http://localhost:3000/api',
   },
   production: {
-    // Updated to point to your Azure App Service backend
-    apiUrl: 'https://hackgrad.azurewebsites.net/api',
+    apiUrl: 'https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api',
   }
 };
 
