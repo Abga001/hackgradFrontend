@@ -16,5 +16,10 @@
   "mimeTypes": {
     ".woff": "application/font-woff",
     ".woff2": "application/font-woff2"
+  },
+    "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
   }
 }
