@@ -97,8 +97,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Auth Service
-// Auth Service - Updated with enhanced debugging and error handling
+// Auth Service - Complete updated version with route fixes and enhanced error handling
 export const authService = {
   getApiUrl: () => {
     console.log('Environment variables:', {
@@ -110,11 +109,23 @@ export const authService = {
     return API_URL;
   },
 
-  // Register new user
+  // Register new user - UPDATED ROUTE
   register: async (userData) => {
     try {
-      console.log('Making registration request to:', `${API_URL}/user/register`);
-      const response = await api.post('/user/register', userData);
+      console.log('Making registration request to:', `${API_URL}/auth/register`);
+      console.log('Registration data:', {
+        username: userData.username,
+        email: userData.email,
+        hasPassword: !!userData.password
+      });
+      
+      const response = await api.post('/auth/register', userData);
+      
+      console.log('Registration response received:', {
+        status: response.status,
+        data: response.data
+      });
+      
       return response.data;
     } catch (error) {
       console.error("Registration error details:", {
@@ -122,7 +133,8 @@ export const authService = {
         response: error.response?.data,
         status: error.response?.status,
         url: error.config?.url,
-        headers: error.config?.headers
+        headers: error.config?.headers,
+        code: error.code
       });
       
       // Provide more specific error messages
@@ -135,33 +147,41 @@ export const authService = {
         throw new Error('An account with this email already exists.');
       } else if (error.response?.status === 500) {
         throw new Error('Server error. Please try again later.');
+      } else if (error.message.includes('CORS')) {
+        throw new Error('Connection blocked by security policy. Please contact support.');
       } else {
         throw new Error(error.response?.data?.message || error.message || 'Registration failed');
       }
     }
   },
 
-  // Login user
+  // Login user - UPDATED ROUTE
   login: async (credentials) => {
     try {
-      console.log('Making login request to:', `${API_URL}/user/login`);
+      console.log('Making login request to:', `${API_URL}/auth/login`);
       console.log('Request config:', {
         baseURL: API_URL,
-        url: '/user/login',
+        url: '/auth/login',
         method: 'POST',
-        headers: api.defaults.headers
+        headers: api.defaults.headers,
+        credentials: {
+          email: credentials.email,
+          hasPassword: !!credentials.password
+        }
       });
       
-      const response = await api.post('/user/login', credentials);
+      const response = await api.post('/auth/login', credentials);
       
       console.log('Login response received:', {
         status: response.status,
         hasToken: !!response.data.token,
-        hasUser: !!response.data.user
+        hasUser: !!response.data.user,
+        tokenLength: response.data.token ? response.data.token.length : 0
       });
       
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        console.log('Token saved to localStorage');
         return response.data; // Return the full response data including user info
       }
       
@@ -173,7 +193,8 @@ export const authService = {
         status: error.response?.status,
         url: error.config?.url,
         headers: error.config?.headers,
-        code: error.code
+        code: error.code,
+        stack: error.stack
       });
       
       // Provide more specific error messages
@@ -184,6 +205,8 @@ export const authService = {
       } else if (error.response?.status === 400) {
         const serverMessage = error.response?.data?.message || 'Invalid login credentials';
         throw new Error(serverMessage);
+      } else if (error.response?.status === 404) {
+        throw new Error('Login service not found. Please contact support.');
       } else if (error.response?.status === 500) {
         throw new Error('Server error. Please try again later.');
       } else if (error.message.includes('CORS')) {
@@ -203,12 +226,18 @@ export const authService = {
         localStorage.removeItem(key);
       }
     });
+    console.log('localStorage cleared');
   },
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    const hasToken = localStorage.getItem('token') !== null;
-    console.log('Authentication check:', { hasToken });
+    const token = localStorage.getItem('token');
+    const hasToken = token !== null;
+    console.log('Authentication check:', { 
+      hasToken, 
+      tokenLength: token ? token.length : 0,
+      tokenPreview: token ? `${token.substring(0, 10)}...` : 'none'
+    });
     return hasToken;
   },
 
@@ -218,7 +247,10 @@ export const authService = {
     const cachedData = getFromCache(cacheKey);
     
     if (cachedData) {
-      console.log('Returning cached user data');
+      console.log('Returning cached user data:', {
+        userId: cachedData._id,
+        username: cachedData.username
+      });
       return cachedData;
     }
     
@@ -229,14 +261,15 @@ export const authService = {
         return null;
       }
 
-      console.log('Fetching current user profile from API');
+      console.log('Fetching current user profile from API:', `${API_URL}/user/profile`);
       const response = await api.get('/user/profile');
       const userData = response.data;
       
       console.log('User profile fetched successfully:', {
         userId: userData._id,
         username: userData.username,
-        email: userData.email
+        email: userData.email,
+        fullName: userData.fullName
       });
       
       // Cache the user data
@@ -248,7 +281,8 @@ export const authService = {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
-        url: error.config?.url
+        url: error.config?.url,
+        code: error.code
       });
       
       // If token is invalid, clear it
@@ -262,17 +296,25 @@ export const authService = {
     }
   },
 
-  // Get Firebase token for chat
+  // Get Firebase token for chat - ROUTE STAYS THE SAME (in userRoutes)
   getFirebaseToken: async () => {
     try {
-      console.log('Fetching Firebase token');
+      console.log('Fetching Firebase token from:', `${API_URL}/user/firebase-token`);
       const response = await api.get('/user/firebase-token');
+      
+      console.log('Firebase token received:', {
+        hasToken: !!response.data.firebaseToken,
+        tokenLength: response.data.firebaseToken ? response.data.firebaseToken.length : 0
+      });
+      
       return response.data.firebaseToken;
     } catch (error) {
       console.error("Get Firebase token error:", {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
+        url: error.config?.url,
+        code: error.code
       });
       throw error;
     }
