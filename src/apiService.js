@@ -99,6 +99,7 @@ api.interceptors.request.use(
 );
 
 // Auth Service - Complete updated version with route fixes and enhanced error handling
+// Auth Service - CORRECTED - All routes should be /user/
 export const authService = {
   getApiUrl: () => {
     console.log('Environment variables:', {
@@ -110,17 +111,17 @@ export const authService = {
     return API_URL;
   },
 
-  // Register new user - UPDATED ROUTE
+  // Register new user - CORRECTED TO /user/register
   register: async (userData) => {
     try {
-      console.log('Making registration request to:', `${API_URL}/auth/register`);
+      console.log('Making registration request to:', `${API_URL}/user/register`);
       console.log('Registration data:', {
         username: userData.username,
         email: userData.email,
         hasPassword: !!userData.password
       });
       
-      const response = await api.post('/user/register', userData);
+      const response = await api.post('/user/register', userData); // CORRECTED
       
       console.log('Registration response received:', {
         status: response.status,
@@ -156,13 +157,13 @@ export const authService = {
     }
   },
 
-  // Login user - UPDATED ROUTE
+  // Login user - CORRECTED TO /user/login
   login: async (credentials) => {
     try {
       console.log('Making login request to:', `${API_URL}/user/login`);
       console.log('Request config:', {
         baseURL: API_URL,
-        url: '/auth/login',
+        url: '/user/login', // CORRECTED
         method: 'POST',
         headers: api.defaults.headers,
         credentials: {
@@ -171,7 +172,7 @@ export const authService = {
         }
       });
       
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/user/login', credentials); // CORRECTED
       
       console.log('Login response received:', {
         status: response.status,
@@ -218,10 +219,9 @@ export const authService = {
     }
   },
 
-  // Logout user
+  // Rest of your methods stay the same...
   logout: () => {
     console.log('Logging out user - clearing localStorage');
-    // Clear all app data including cached items
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('cache_') || key === 'token') {
         localStorage.removeItem(key);
@@ -230,7 +230,6 @@ export const authService = {
     console.log('localStorage cleared');
   },
 
-  // Check if user is authenticated
   isAuthenticated: () => {
     const token = localStorage.getItem('token');
     const hasToken = token !== null;
@@ -242,7 +241,6 @@ export const authService = {
     return hasToken;
   },
 
-  // Get current user data with caching
   getCurrentUser: async () => {
     const cacheKey = 'cache_current_user';
     const cachedData = getFromCache(cacheKey);
@@ -273,9 +271,7 @@ export const authService = {
         fullName: userData.fullName
       });
       
-      // Cache the user data
       saveToCache(cacheKey, userData);
-      
       return userData;
     } catch (error) {
       console.error("Get current user error details:", {
@@ -286,7 +282,6 @@ export const authService = {
         code: error.code
       });
       
-      // If token is invalid, clear it
       if (error.response?.status === 401) {
         console.log('Token appears to be invalid, clearing localStorage');
         localStorage.removeItem('token');
@@ -297,7 +292,6 @@ export const authService = {
     }
   },
 
-  // Get Firebase token for chat - ROUTE STAYS THE SAME (in userRoutes)
   getFirebaseToken: async () => {
     try {
       console.log('Fetching Firebase token from:', `${API_URL}/user/firebase-token`);
