@@ -98,37 +98,105 @@ api.interceptors.request.use(
 );
 
 // Auth Service
+// Auth Service - Updated with enhanced debugging and error handling
 export const authService = {
+  getApiUrl: () => {
+    console.log('Environment variables:', {
+      NODE_ENV: process.env.NODE_ENV,
+      REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+      computed_API_URL: API_URL,
+      window_location: window.location.origin
+    });
+    return API_URL;
+  },
 
-    getApiUrl: () => API_URL,
   // Register new user
   register: async (userData) => {
     try {
+      console.log('Making registration request to:', `${API_URL}/user/register`);
       const response = await api.post('/user/register', userData);
       return response.data;
     } catch (error) {
-      console.error("Registration error:", error.response?.data || error.message);
-      throw error;
+      console.error("Registration error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        headers: error.config?.headers
+      });
+      
+      // Provide more specific error messages
+      if (error.code === 'ERR_NETWORK') {
+        throw new Error('Network error: Unable to connect to server. Please check your connection.');
+      } else if (error.response?.status === 400) {
+        const serverMessage = error.response?.data?.message || 'Invalid registration data';
+        throw new Error(serverMessage);
+      } else if (error.response?.status === 409) {
+        throw new Error('An account with this email already exists.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      } else {
+        throw new Error(error.response?.data?.message || error.message || 'Registration failed');
+      }
     }
   },
 
   // Login user
   login: async (credentials) => {
     try {
+      console.log('Making login request to:', `${API_URL}/user/login`);
+      console.log('Request config:', {
+        baseURL: API_URL,
+        url: '/user/login',
+        method: 'POST',
+        headers: api.defaults.headers
+      });
+      
       const response = await api.post('/user/login', credentials);
+      
+      console.log('Login response received:', {
+        status: response.status,
+        hasToken: !!response.data.token,
+        hasUser: !!response.data.user
+      });
+      
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        return true;
+        return response.data; // Return the full response data including user info
       }
-      return false;
+      
+      throw new Error('No token received from server');
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-      throw error;
+      console.error("Login error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        headers: error.config?.headers,
+        code: error.code
+      });
+      
+      // Provide more specific error messages
+      if (error.code === 'ERR_NETWORK') {
+        throw new Error('Network error: Unable to connect to server. Please check your connection.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Invalid email or password.');
+      } else if (error.response?.status === 400) {
+        const serverMessage = error.response?.data?.message || 'Invalid login credentials';
+        throw new Error(serverMessage);
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      } else if (error.message.includes('CORS')) {
+        throw new Error('Connection blocked by security policy. Please contact support.');
+      } else {
+        throw new Error(error.response?.data?.message || error.message || 'Login failed');
+      }
     }
   },
 
   // Logout user
   logout: () => {
+    console.log('Logging out user - clearing localStorage');
     // Clear all app data including cached items
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('cache_') || key === 'token') {
@@ -139,7 +207,9 @@ export const authService = {
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return localStorage.getItem('token') !== null;
+    const hasToken = localStorage.getItem('token') !== null;
+    console.log('Authentication check:', { hasToken });
+    return hasToken;
   },
 
   // Get current user data with caching
@@ -148,22 +218,46 @@ export const authService = {
     const cachedData = getFromCache(cacheKey);
     
     if (cachedData) {
+      console.log('Returning cached user data');
       return cachedData;
     }
     
     try {
       const token = localStorage.getItem('token');
-      if (!token) return null;
+      if (!token) {
+        console.log('No token found, cannot get current user');
+        return null;
+      }
 
+      console.log('Fetching current user profile from API');
       const response = await api.get('/user/profile');
       const userData = response.data;
+      
+      console.log('User profile fetched successfully:', {
+        userId: userData._id,
+        username: userData.username,
+        email: userData.email
+      });
       
       // Cache the user data
       saveToCache(cacheKey, userData);
       
       return userData;
     } catch (error) {
-      console.error("Get current user error:", error.response?.data || error.message);
+      console.error("Get current user error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // If token is invalid, clear it
+      if (error.response?.status === 401) {
+        console.log('Token appears to be invalid, clearing localStorage');
+        localStorage.removeItem('token');
+        localStorage.removeItem(cacheKey);
+      }
+      
       throw error;
     }
   },
@@ -171,10 +265,15 @@ export const authService = {
   // Get Firebase token for chat
   getFirebaseToken: async () => {
     try {
+      console.log('Fetching Firebase token');
       const response = await api.get('/user/firebase-token');
       return response.data.firebaseToken;
     } catch (error) {
-      console.error("Get Firebase token error:", error.response?.data || error.message);
+      console.error("Get Firebase token error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   }
