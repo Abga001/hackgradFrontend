@@ -159,7 +159,7 @@ export const authService = {
   // Login user - UPDATED ROUTE
   login: async (credentials) => {
     try {
-      console.log('Making login request to:', `${API_URL}/auth/login`);
+      console.log('Making login request to:', `${API_URL}/user/login`);
       console.log('Request config:', {
         baseURL: API_URL,
         url: '/auth/login',
