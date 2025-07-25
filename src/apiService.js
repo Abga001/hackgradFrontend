@@ -120,7 +120,7 @@ export const authService = {
         hasPassword: !!userData.password
       });
       
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post('/user/register', userData);
       
       console.log('Registration response received:', {
         status: response.status,
