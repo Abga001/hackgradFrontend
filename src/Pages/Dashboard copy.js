@@ -2,13 +2,9 @@
 
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate} from "react-router-dom";
-import { searchService, contentService,userService } from "../apiService";
+import { searchService, contentService } from "../apiService";
 import { UserContext, ModalContext } from "../App";
 import "../styles/Dashboard.css";
-// At the top of your Dashboard.js file, add this:
-
-// Define the API URL constant
-const API_URL = 'https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api';
 
 const ImprovedDashboard = () => {
   const [contents, setContents] = useState([]);
@@ -87,7 +83,7 @@ const ImprovedDashboard = () => {
     if (content.image && typeof content.image === 'string') {
       // If it's a relative path starting with /uploads/
       if (content.image.startsWith('/uploads/')) {
-        return `https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net${content.image}`;
+        return `http://localhost:3000${content.image}`;
       }
       // If it's a full URL or base64
       if (content.image.startsWith('http') || content.image.startsWith('data:')) {
@@ -95,7 +91,7 @@ const ImprovedDashboard = () => {
       }
       // If it's just a filename, add the uploads path
       if (!content.image.startsWith('/')) {
-        return `https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/uploads/${content.image}`;
+        return `http://localhost:3000/uploads/${content.image}`;
       }
       return content.image;
     }
@@ -104,7 +100,7 @@ const ImprovedDashboard = () => {
     const extraFields = content.extraFields || {};
     if (extraFields.image) {
       if (extraFields.image.startsWith('/uploads/')) {
-        return `https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net${extraFields.image}`;
+        return `http://localhost:3000${extraFields.image}`;
       }
       if (extraFields.image.startsWith('http') || extraFields.image.startsWith('data:')) {
         return extraFields.image;
@@ -252,7 +248,7 @@ useEffect(() => {
         : null;
 
       // Build the API URL with filter parameters
-      let contentsUrl = `https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api/contents?page=${currentPage}&limit=${itemsPerPage}`;
+      let contentsUrl = `http://localhost:3000/api/contents?page=${currentPage}&limit=${itemsPerPage}`;
       
       // Add contentType filter if needed
       if (contentType) {
@@ -263,7 +259,7 @@ useEffect(() => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      const usersResponse = await fetch('https://hackgrad-evd0c6g9agehf9e5.canadacentral-01.azurewebsites.net/api/user/all', {
+      const usersResponse = await fetch('http://localhost:3000/api/user/all', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
