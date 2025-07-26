@@ -11,16 +11,16 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 const CACHE_ENABLED = true; // Toggle for easy cache disabling during debugging
 
 // Create a reusable axios instance for authentication requests
-const authAxios = axios.create({
-  baseURL: `${API_URL}/auth`,
-  timeout: 10000,
-});
+// const authAxios = axios.create({
+//   baseURL: `${API_URL}/auth`,
+//   timeout: 10000,
+// });
 
-// Create a reusable axios instance for authenticated requests
-const apiAxios = axios.create({
-  baseURL: API_URL,
-  timeout: 10000,
-});
+// // Create a reusable axios instance for authenticated requests
+// const apiAxios = axios.create({
+//   baseURL: API_URL,
+//   timeout: 10000,
+// });
 
 
 
@@ -56,7 +56,6 @@ const saveToCache = (cacheKey, data) => {
     }));
   } catch (e) {
     console.warn("Caching failed, likely localStorage is full", e);
-    // Attempt to clear old cache entries
     clearOldCacheEntries();
   }
 };
@@ -66,13 +65,13 @@ const clearOldCacheEntries = () => {
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key.startsWith('cache_')) {
+    if (key && key.startsWith('cache_')) {
       keysToRemove.push(key);
     }
   }
   
   // Sort by age and remove oldest 50%
-  const keysToKeep = keysToRemove.length / 2;
+  const keysToKeep = Math.floor(keysToRemove.length / 2);
   keysToRemove.forEach((key, index) => {
     if (index >= keysToKeep) {
       localStorage.removeItem(key);
@@ -96,6 +95,22 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ API Success: ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
+    return response;
+  },
+  (error) => {
+    console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response?.status}`, {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    return Promise.reject(error);
+  }
 );
 
 // Auth Service - Complete updated version with route fixes and enhanced error handling
